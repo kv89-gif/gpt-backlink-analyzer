@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import re
 
 # Streamlit app UI
-st.title("🔍 Backlink Opportunity Checker (Stricter Spam Detection, No API)")
+st.title("🔍 Backlink Opportunity Checker)")
 
 st.sidebar.header("Input Details")
 competitor_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV with URL column)", type=['csv'], key="comp")
