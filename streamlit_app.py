@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import openai
 import time
+from openai import OpenAIError  # Correct way to import base error class
 
 # Set your OpenAI API key
 openai.api_key = st.secrets["OPENAI_API_KEY"]
@@ -35,8 +36,8 @@ def analyze_backlink(client_url, niche, competitor_url):
             temperature=0.3
         )
         return response.choices[0].message.content
-    except openai.error.RateLimitError as e:
-        raise RuntimeError("You have exceeded your OpenAI quota. Please check your plan or wait for the quota reset.") from e
+    except OpenAIError as e:
+        raise RuntimeError("You have exceeded your OpenAI quota or encountered an API error. Please check your OpenAI account.") from e
     except Exception as e:
         raise RuntimeError(f"An unexpected error occurred: {str(e)}") from e
 
