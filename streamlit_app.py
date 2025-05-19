@@ -34,9 +34,9 @@ def is_spammy(url):
 
     reasons = []
 
-    # Flag any part of the domain that matches IP-like pattern
-    if re.search(r"\b\d{1,3}(?:\.\d{1,3}){3}\b", domain):
-        reasons.append("IP-like structure in domain")
+    # Flag if domain is exactly an IP address
+    if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", domain):
+        reasons.append("IP address used as domain")
 
     if any(pattern in root_domain for pattern in spammy_patterns):
         reasons.append("Domain contains spammy keyword or TLD")
