@@ -24,13 +24,13 @@ def is_spammy(url):
 
     reasons = []
 
-    if re.fullmatch(r"\d{1,3}(\.\d{1,3}){3}", domain):
+    if re.fullmatch(r"^\d{1,3}(\.\d{1,3}){3}$", domain):
         reasons.append("IP address used as domain")
     if any(pattern in domain for pattern in spammy_patterns):
         reasons.append("Domain contains common spammy keyword or TLD")
     if any(domain.endswith(tld) for tld in spammy_cc_tlds):
         reasons.append("Suspicious country-code TLD")
-    if any(domain.endswith(bad) for bad in known_bad_domains):
+    if any(domain.endswith(bad) or bad in domain for bad in known_bad_domains):
         reasons.append("Low-quality hosting or free subdomain")
     if any(keyword in path for keyword in known_bad_keywords):
         reasons.append("URL path contains spam-related keywords")
@@ -40,6 +40,8 @@ def is_spammy(url):
         reasons.append("Cyrillic characters in URL")
     if re.search(r"[0-9]{4,}", domain):
         reasons.append("Domain includes excessive numbers")
+    if re.match(r"\d+\.", domain.split(".")[0]):
+        reasons.append("Domain starts with numeric subdomain")
 
     is_flagged = len(reasons) > 0
     return is_flagged, "; ".join(reasons)
