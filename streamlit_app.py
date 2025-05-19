@@ -26,13 +26,13 @@ def analyze_backlink(client_url, niche, competitor_url):
     Relevance: <value>\nQuality: <value>\nEase: <value>\nRecommendation: <text>
     """
 
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=100,
         temperature=0.3
     )
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
 
 # Streamlit app UI
 st.title("🔍 GPT-Powered Backlink Analyzer")
@@ -46,11 +46,14 @@ if uploaded_file and client_url and niche:
     df = pd.read_csv(uploaded_file)
     st.subheader("Competitor Backlink Analysis")
 
-    if 'URL' not in df.columns:
+    # Normalize column names to lowercase for flexibility
+    df.columns = [col.strip().lower() for col in df.columns]
+
+    if 'url' not in df.columns:
         st.error("Your CSV must have a column named 'URL'.")
     else:
         results = []
-        for url in df['URL']:
+        for url in df['url']:
             with st.spinner(f"Analyzing {url}..."):
                 analysis = analyze_backlink(client_url, niche, url)
                 parsed = dict(line.split(": ", 1) for line in analysis.strip().split("\n"))
