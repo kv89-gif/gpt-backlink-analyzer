@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import re
 
 # Streamlit app UI
-st.title("🔍 Backlink Opportunity Checker")
+st.title("🔍 Backlink Opportunity Checker (Stricter Spam Detection, No API)")
 
 st.sidebar.header("Input Details")
 competitor_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV with URL column)", type=['csv'], key="comp")
@@ -23,7 +23,7 @@ def extract_root_domain(domain):
 
 def is_spammy(url):
     parsed = urlparse(url)
-    domain = parsed.netloc.lower().split(':')[0]  # remove port if exists
+    domain = parsed.netloc.lower().split(':')[0].strip()  # remove port and trim spaces
     root_domain = extract_root_domain(domain)
     path = parsed.path.lower()
     full_url = url.lower()
