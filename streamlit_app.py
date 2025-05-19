@@ -12,6 +12,7 @@ competitor_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV wit
 client_file = st.sidebar.file_uploader("Upload Client Backlinks (CSV with URL column)", type=['csv'], key="client")
 
 # Enhanced heuristic to detect spammy domains or URLs
+
 def is_spammy(url):
     domain = urlparse(url).netloc.lower()
     path = urlparse(url).path.lower()
@@ -20,18 +21,20 @@ def is_spammy(url):
     spammy_cc_tlds = [".ru", ".cn", ".tk", ".ml", ".ga", ".cf", ".ua"]
     known_bad_keywords = ["download", "hack", "crack", "bet", "porno", "spyware"]
 
+    if re.fullmatch(r"\d{1,3}(\.\d{1,3}){3}", domain):
+        return True, "IP address used as domain"
     if any(pattern in domain for pattern in spammy_patterns):
-        return True
+        return True, "Domain contains common spammy keyword"
     if any(domain.endswith(tld) for tld in spammy_cc_tlds):
-        return True
+        return True, "Suspicious country-code TLD"
     if any(keyword in path for keyword in known_bad_keywords):
-        return True
-    if len(path.split("/")) > 6:  # very deep URL path is suspicious
-        return True
-    if re.search(r"[\u0400-\u04FF]+", path):  # Cyrillic characters
-        return True
+        return True, "URL path contains known spammy keyword"
+    if len(path.split("/")) > 6:
+        return True, "URL path is very deep"
+    if re.search(r"[\u0400-\u04FF]+", path):
+        return True, "Cyrillic characters detected in URL"
 
-    return False
+    return False, ""
 
 if competitor_file and client_file:
     st.subheader("Unique Backlink Opportunities for Client")
@@ -55,8 +58,9 @@ if competitor_file and client_file:
 
             results = []
             for url in unique_urls:
-                tag = "Spammy" if is_spammy(url) else "Likely Good"
-                results.append({"URL": url, "Status": tag})
+                spammy, reason = is_spammy(url)
+                tag = "Spammy" if spammy else "Likely Good"
+                results.append({"URL": url, "Status": tag, "Reason": reason})
 
             result_df = pd.DataFrame(results)
             st.dataframe(result_df)
