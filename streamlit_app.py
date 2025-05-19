@@ -23,7 +23,8 @@ def extract_root_domain(domain):
 
 def is_spammy(url):
     domain = urlparse(url).netloc.lower()
-    root_domain = extract_root_domain(domain.split(':')[0])
+    domain = domain.split(':')[0]  # remove port if exists
+    root_domain = extract_root_domain(domain)
     path = urlparse(url).path.lower()
     full_url = url.lower()
 
