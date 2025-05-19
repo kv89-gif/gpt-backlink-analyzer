@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import openai
+import time
 
 # Set your OpenAI API key
 openai.api_key = st.secrets["OPENAI_API_KEY"]
@@ -55,10 +56,14 @@ if uploaded_file and client_url and niche:
         results = []
         for url in df['url']:
             with st.spinner(f"Analyzing {url}..."):
-                analysis = analyze_backlink(client_url, niche, url)
-                parsed = dict(line.split(": ", 1) for line in analysis.strip().split("\n"))
-                parsed['Competitor URL'] = url
-                results.append(parsed)
+                try:
+                    analysis = analyze_backlink(client_url, niche, url)
+                    parsed = dict(line.split(": ", 1) for line in analysis.strip().split("\n"))
+                    parsed['Competitor URL'] = url
+                    results.append(parsed)
+                    time.sleep(1.5)  # Delay to avoid rate limit
+                except Exception as e:
+                    st.warning(f"Failed to analyze {url}: {e}")
 
         result_df = pd.DataFrame(results)
         st.dataframe(result_df[['Competitor URL', 'Relevance', 'Quality', 'Ease', 'Recommendation']])
