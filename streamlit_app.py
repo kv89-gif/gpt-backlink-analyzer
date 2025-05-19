@@ -11,10 +11,19 @@ st.sidebar.header("Input Details")
 competitor_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV with URL column)", type=['csv'], key="comp")
 client_file = st.sidebar.file_uploader("Upload Client Backlinks (CSV with URL column)", type=['csv'], key="client")
 
+# Extract root domain
+
+def extract_root_domain(domain):
+    parts = domain.split('.')
+    if len(parts) >= 2:
+        return '.'.join(parts[-2:])
+    return domain
+
 # Advanced spam detection
 
 def is_spammy(url):
     domain = urlparse(url).netloc.lower()
+    root_domain = extract_root_domain(domain.split(':')[0])
     path = urlparse(url).path.lower()
     full_url = url.lower()
 
@@ -25,13 +34,13 @@ def is_spammy(url):
 
     reasons = []
 
-    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain) or re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain.split(":")[0]):
+    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain.split(":")[0]):
         reasons.append("IP address used as domain")
-    if any(pattern in domain for pattern in spammy_patterns):
+    if any(pattern in root_domain for pattern in spammy_patterns):
         reasons.append("Domain contains common spammy keyword or TLD")
-    if any(domain.endswith(tld) for tld in spammy_cc_tlds):
+    if any(root_domain.endswith(tld) for tld in spammy_cc_tlds):
         reasons.append("Suspicious country-code TLD")
-    if any(domain.endswith(bad) or bad in domain for bad in known_bad_domains):
+    if any(root_domain.endswith(bad) or bad in root_domain for bad in known_bad_domains):
         reasons.append("Low-quality hosting or free subdomain")
     if any(keyword in path or keyword in full_url for keyword in known_bad_keywords):
         reasons.append("URL contains spam-related keywords")
@@ -39,9 +48,9 @@ def is_spammy(url):
         reasons.append("URL path is very deep")
     if re.search(r"[\u0400-\u04FF]+", path):
         reasons.append("Cyrillic characters in URL")
-    if re.search(r"[0-9]{4,}", domain):
+    if re.search(r"[0-9]{4,}", root_domain):
         reasons.append("Domain includes excessive numbers")
-    if re.match(r"^\d+\.", domain):
+    if re.match(r"^\d+\.", root_domain):
         reasons.append("Domain starts with numeric subdomain")
 
     is_flagged = len(reasons) > 0
