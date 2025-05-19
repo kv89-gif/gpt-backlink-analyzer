@@ -16,15 +16,16 @@ client_file = st.sidebar.file_uploader("Upload Client Backlinks (CSV with URL co
 def is_spammy(url):
     domain = urlparse(url).netloc.lower()
     path = urlparse(url).path.lower()
+    full_url = url.lower()
 
-    spammy_patterns = [".xyz", ".info", "free", "cheap", "casino", "adult", "loan", ".buzz", ".top", ".click", ".work"]
-    spammy_cc_tlds = [".ru", ".cn", ".tk", ".ml", ".ga", ".cf", ".ua"]
-    known_bad_keywords = ["download", "hack", "crack", "bet", "porno", "spyware"]
+    spammy_patterns = [".xyz", ".info", "free", "cheap", "casino", "adult", "loan", ".buzz", ".top", ".click", ".work", ".space", ".online", ".cam"]
+    spammy_cc_tlds = [".ru", ".cn", ".tk", ".ml", ".ga", ".cf", ".ua", ".art"]
+    known_bad_keywords = ["download", "hack", "crack", "bet", "porno", "spyware", "txtpad"]
     known_bad_domains = ["blogspot.com", "weebly.com", "000webhostapp.com", "x10host.com"]
 
     reasons = []
 
-    if re.fullmatch(r"^\d{1,3}(\.\d{1,3}){3}$", domain):
+    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain):
         reasons.append("IP address used as domain")
     if any(pattern in domain for pattern in spammy_patterns):
         reasons.append("Domain contains common spammy keyword or TLD")
@@ -32,15 +33,15 @@ def is_spammy(url):
         reasons.append("Suspicious country-code TLD")
     if any(domain.endswith(bad) or bad in domain for bad in known_bad_domains):
         reasons.append("Low-quality hosting or free subdomain")
-    if any(keyword in path for keyword in known_bad_keywords):
-        reasons.append("URL path contains spam-related keywords")
+    if any(keyword in path or keyword in full_url for keyword in known_bad_keywords):
+        reasons.append("URL contains spam-related keywords")
     if len(path.split("/")) > 6:
         reasons.append("URL path is very deep")
     if re.search(r"[\u0400-\u04FF]+", path):
         reasons.append("Cyrillic characters in URL")
     if re.search(r"[0-9]{4,}", domain):
         reasons.append("Domain includes excessive numbers")
-    if re.match(r"\d+\.", domain.split(".")[0]):
+    if re.match(r"^\d+\.", domain):
         reasons.append("Domain starts with numeric subdomain")
 
     is_flagged = len(reasons) > 0
