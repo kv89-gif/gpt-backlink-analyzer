@@ -49,6 +49,8 @@ client_url = st.sidebar.text_input("Your Client's URL")
 niche = st.sidebar.text_input("Your Client's Niche")
 uploaded_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV)", type=['csv'])
 
+manual_mode = False
+
 if uploaded_file and client_url and niche:
     df = pd.read_csv(uploaded_file)
     st.subheader("Competitor Backlink Analysis")
@@ -70,18 +72,32 @@ if uploaded_file and client_url and niche:
                     time.sleep(1.5)  # Delay to avoid rate limit
                 except RuntimeError as e:
                     st.error(str(e))
+                    manual_mode = True
                     break
                 except Exception as e:
                     st.warning(f"Failed to analyze {url}: {e}")
 
-        result_df = pd.DataFrame(results)
-        required_cols = ['Competitor URL', 'Relevance', 'Quality', 'Ease', 'Recommendation']
-
-        if all(col in result_df.columns for col in required_cols):
-            st.dataframe(result_df[required_cols])
-            st.download_button("Download Results", data=result_df.to_csv(index=False), file_name="analysis_results.csv")
+        if manual_mode:
+            st.warning("Switched to manual mode due to quota limits. You can now analyze one URL at a time below.")
+            manual_url = st.text_input("Enter a competitor backlink URL manually")
+            if manual_url:
+                if client_url and niche:
+                    try:
+                        manual_result = analyze_backlink(client_url, niche, manual_url)
+                        st.text_area("GPT Analysis Result", manual_result, height=150)
+                    except Exception as e:
+                        st.error(f"Manual analysis failed: {e}")
+                else:
+                    st.info("Please fill in the client URL and niche in the sidebar.")
         else:
-            st.warning("The response from GPT did not contain all expected fields. Showing raw results instead.")
-            st.dataframe(result_df)
+            result_df = pd.DataFrame(results)
+            required_cols = ['Competitor URL', 'Relevance', 'Quality', 'Ease', 'Recommendation']
+
+            if all(col in result_df.columns for col in required_cols):
+                st.dataframe(result_df[required_cols])
+                st.download_button("Download Results", data=result_df.to_csv(index=False), file_name="analysis_results.csv")
+            else:
+                st.warning("The response from GPT did not contain all expected fields. Showing raw results instead.")
+                st.dataframe(result_df)
 else:
     st.info("Please fill all details and upload your competitor backlinks CSV.")
