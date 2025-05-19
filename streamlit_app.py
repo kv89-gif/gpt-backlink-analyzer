@@ -27,13 +27,18 @@ def analyze_backlink(client_url, niche, competitor_url):
     Relevance: <value>\nQuality: <value>\nEase: <value>\nRecommendation: <text>
     """
 
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=100,
-        temperature=0.3
-    )
-    return response.choices[0].message.content
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=100,
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+    except openai.error.RateLimitError as e:
+        raise RuntimeError("You have exceeded your OpenAI quota. Please check your plan or wait for the quota reset.") from e
+    except Exception as e:
+        raise RuntimeError(f"An unexpected error occurred: {str(e)}") from e
 
 # Streamlit app UI
 st.title("🔍 GPT-Powered Backlink Analyzer")
@@ -62,6 +67,9 @@ if uploaded_file and client_url and niche:
                     parsed['Competitor URL'] = url
                     results.append(parsed)
                     time.sleep(1.5)  # Delay to avoid rate limit
+                except RuntimeError as e:
+                    st.error(str(e))
+                    break
                 except Exception as e:
                     st.warning(f"Failed to analyze {url}: {e}")
 
