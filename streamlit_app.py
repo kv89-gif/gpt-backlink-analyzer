@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import re
 
 # Streamlit app UI
-st.title("🔍 Backlink Opportunity Checker")
+st.title("🔍 Backlink Opportunity Checker (Stricter Spam Detection, No API)")
 
 st.sidebar.header("Input Details")
 competitor_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV with URL column)", type=['csv'], key="comp")
@@ -38,19 +38,18 @@ def is_spammy(url):
     if re.search(r"\b\d{1,3}(?:\.\d{1,3}){3}\b", domain):
         reasons.append("IP-like structure in domain")
 
-    if root_domain not in whitelisted_good_domains:
-        if any(pattern in root_domain for pattern in spammy_patterns):
-            reasons.append("Domain contains spammy keyword or TLD")
-        if any(root_domain.endswith(tld) for tld in spammy_cc_tlds):
-            reasons.append("Suspicious country-code TLD")
-        if root_domain.endswith(".cn") or ".cn/" in full_url:
-            reasons.append("Chinese domain or path pattern")
-        if any(root_domain.endswith(bad) or bad in root_domain for bad in known_bad_domains):
-            reasons.append("Low-quality or free hosting provider")
-        if re.match(r"^\d+", domain.split(".")[0]):
-            reasons.append("Subdomain starts with a number")
-        if re.search(r"[0-9]{4,}", root_domain):
-            reasons.append("Excessive numbers in domain name")
+    if any(pattern in root_domain for pattern in spammy_patterns):
+        reasons.append("Domain contains spammy keyword or TLD")
+    if any(root_domain.endswith(tld) for tld in spammy_cc_tlds):
+        reasons.append("Suspicious country-code TLD")
+    if root_domain.endswith(".cn") or ".cn/" in full_url:
+        reasons.append("Chinese domain or path pattern")
+    if any(root_domain.endswith(bad) or bad in root_domain for bad in known_bad_domains):
+        reasons.append("Low-quality or free hosting provider")
+    if re.match(r"^\d+", domain.split(".")[0]):
+        reasons.append("Subdomain starts with a number")
+    if re.search(r"[0-9]{4,}", root_domain):
+        reasons.append("Excessive numbers in domain name")
 
     if any(keyword in path or keyword in full_url for keyword in known_bad_keywords):
         reasons.append("Suspicious keyword in path or URL")
