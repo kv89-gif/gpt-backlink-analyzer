@@ -25,7 +25,7 @@ def is_spammy(url):
 
     reasons = []
 
-    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain):
+    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain) or re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain.split(":")[0]):
         reasons.append("IP address used as domain")
     if any(pattern in domain for pattern in spammy_patterns):
         reasons.append("Domain contains common spammy keyword or TLD")
