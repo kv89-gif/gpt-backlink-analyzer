@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import re
 
 # Streamlit app UI
-st.title("🔍 Backlink Opportunity Checker (Stricter Spam Detection)")
+st.title("🔍 Backlink Opportunity Checker")
 
 st.sidebar.header("Input Details")
 competitor_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV with URL column)", type=['csv'], key="comp")
@@ -18,9 +18,6 @@ def extract_root_domain(domain):
     if len(parts) >= 2:
         return '.'.join(parts[-2:])
     return domain
-
-# Whitelist of safe numeric domains
-whitelisted_good_domains = {"247wallst.com"}
 
 # Stricter spam detection logic
 
@@ -37,14 +34,17 @@ def is_spammy(url):
 
     reasons = []
 
-    if re.fullmatch(r"^\d{1,3}(\.\d{1,3}){3}$", domain.split(":")[0]):
-        reasons.append("IP address used as domain")
+    # Flag any part of the domain that matches IP-like pattern
+    if re.search(r"\b\d{1,3}(?:\.\d{1,3}){3}\b", domain):
+        reasons.append("IP-like structure in domain")
 
     if root_domain not in whitelisted_good_domains:
         if any(pattern in root_domain for pattern in spammy_patterns):
             reasons.append("Domain contains spammy keyword or TLD")
         if any(root_domain.endswith(tld) for tld in spammy_cc_tlds):
             reasons.append("Suspicious country-code TLD")
+        if root_domain.endswith(".cn") or ".cn/" in full_url:
+            reasons.append("Chinese domain or path pattern")
         if any(root_domain.endswith(bad) or bad in root_domain for bad in known_bad_domains):
             reasons.append("Low-quality or free hosting provider")
         if re.match(r"^\d+", domain.split(".")[0]):
@@ -54,8 +54,6 @@ def is_spammy(url):
 
     if any(keyword in path or keyword in full_url for keyword in known_bad_keywords):
         reasons.append("Suspicious keyword in path or URL")
-    if len(path.split("/")) > 5:
-        reasons.append("URL path is very deep")
     if re.search(r"[\u0400-\u04FF]+", path):
         reasons.append("Cyrillic characters in URL")
     if len(root_domain.split(".")) > 3:
