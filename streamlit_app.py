@@ -19,6 +19,9 @@ def extract_root_domain(domain):
         return '.'.join(parts[-2:])
     return domain
 
+# Whitelist of safe numeric domains
+whitelisted_good_domains = {"247wallst.com"}
+
 # Advanced spam detection
 
 def is_spammy(url):
@@ -34,24 +37,28 @@ def is_spammy(url):
 
     reasons = []
 
+    # IP address match (handles all valid IPv4)
     if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain.split(":")[0]):
         reasons.append("IP address used as domain")
-    if any(pattern in root_domain for pattern in spammy_patterns):
-        reasons.append("Domain contains common spammy keyword or TLD")
-    if any(root_domain.endswith(tld) for tld in spammy_cc_tlds):
-        reasons.append("Suspicious country-code TLD")
-    if any(root_domain.endswith(bad) or bad in root_domain for bad in known_bad_domains):
-        reasons.append("Low-quality hosting or free subdomain")
+
+    if root_domain not in whitelisted_good_domains:
+        if any(pattern in root_domain for pattern in spammy_patterns):
+            reasons.append("Domain contains common spammy keyword or TLD")
+        if any(root_domain.endswith(tld) for tld in spammy_cc_tlds):
+            reasons.append("Suspicious country-code TLD")
+        if any(root_domain.endswith(bad) or bad in root_domain for bad in known_bad_domains):
+            reasons.append("Low-quality hosting or free subdomain")
+        if re.match(r"^\d+", domain):
+            reasons.append("Domain or subdomain starts with number")
+        if re.search(r"[0-9]{4,}", root_domain):
+            reasons.append("Domain includes excessive numbers")
+
     if any(keyword in path or keyword in full_url for keyword in known_bad_keywords):
         reasons.append("URL contains spam-related keywords")
     if len(path.split("/")) > 6:
         reasons.append("URL path is very deep")
     if re.search(r"[\u0400-\u04FF]+", path):
         reasons.append("Cyrillic characters in URL")
-    if re.search(r"[0-9]{4,}", root_domain):
-        reasons.append("Domain includes excessive numbers")
-    if re.match(r"^\d+\.", root_domain):
-        reasons.append("Domain starts with numeric subdomain")
 
     is_flagged = len(reasons) > 0
     return is_flagged, "; ".join(reasons)
