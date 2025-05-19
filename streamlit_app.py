@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import re
 
 # Streamlit app UI
-st.title("🔍 Backlink Opportunity Checker (Smarter Spam Detection, No API)")
+st.title("🔍 Backlink Opportunity Checker (Stricter Spam Detection)")
 
 st.sidebar.header("Input Details")
 competitor_file = st.sidebar.file_uploader("Upload Competitor Backlinks (CSV with URL column)", type=['csv'], key="comp")
@@ -22,7 +22,7 @@ def extract_root_domain(domain):
 # Whitelist of safe numeric domains
 whitelisted_good_domains = {"247wallst.com"}
 
-# Advanced spam detection
+# Stricter spam detection logic
 
 def is_spammy(url):
     domain = urlparse(url).netloc.lower()
@@ -30,35 +30,36 @@ def is_spammy(url):
     path = urlparse(url).path.lower()
     full_url = url.lower()
 
-    spammy_patterns = [".xyz", ".info", "free", "cheap", "casino", "adult", "loan", ".buzz", ".top", ".click", ".work", ".space", ".online", ".cam"]
-    spammy_cc_tlds = [".ru", ".cn", ".tk", ".ml", ".ga", ".cf", ".ua", ".art"]
-    known_bad_keywords = ["download", "hack", "crack", "bet", "porno", "spyware", "txtpad"]
-    known_bad_domains = ["blogspot.com", "weebly.com", "000webhostapp.com", "x10host.com"]
+    spammy_patterns = [".xyz", ".info", ".icu", ".buzz", ".top", ".click", ".work", ".space", ".online", ".cam", "free", "cheap", "casino", "adult", "loan", "offer", "deal", "bonus"]
+    spammy_cc_tlds = [".ru", ".cn", ".tk", ".ml", ".ga", ".cf", ".ua", ".art", ".pw"]
+    known_bad_keywords = ["download", "hack", "crack", "bet", "porno", "spyware", "txtpad", "seo", "backlink", "referral"]
+    known_bad_domains = ["blogspot.com", "weebly.com", "000webhostapp.com", "x10host.com", "wordpress.com", "wixsite.com"]
 
     reasons = []
 
-    # IP address match (handles all valid IPv4)
-    if re.match(r"^\d{1,3}(\.\d{1,3}){3}$", domain.split(":")[0]):
+    if re.fullmatch(r"^\d{1,3}(\.\d{1,3}){3}$", domain.split(":")[0]):
         reasons.append("IP address used as domain")
 
     if root_domain not in whitelisted_good_domains:
         if any(pattern in root_domain for pattern in spammy_patterns):
-            reasons.append("Domain contains common spammy keyword or TLD")
+            reasons.append("Domain contains spammy keyword or TLD")
         if any(root_domain.endswith(tld) for tld in spammy_cc_tlds):
             reasons.append("Suspicious country-code TLD")
         if any(root_domain.endswith(bad) or bad in root_domain for bad in known_bad_domains):
-            reasons.append("Low-quality hosting or free subdomain")
-        if re.match(r"^\d+", domain):
-            reasons.append("Domain or subdomain starts with number")
+            reasons.append("Low-quality or free hosting provider")
+        if re.match(r"^\d+", domain.split(".")[0]):
+            reasons.append("Subdomain starts with a number")
         if re.search(r"[0-9]{4,}", root_domain):
-            reasons.append("Domain includes excessive numbers")
+            reasons.append("Excessive numbers in domain name")
 
     if any(keyword in path or keyword in full_url for keyword in known_bad_keywords):
-        reasons.append("URL contains spam-related keywords")
-    if len(path.split("/")) > 6:
+        reasons.append("Suspicious keyword in path or URL")
+    if len(path.split("/")) > 5:
         reasons.append("URL path is very deep")
     if re.search(r"[\u0400-\u04FF]+", path):
         reasons.append("Cyrillic characters in URL")
+    if len(root_domain.split(".")) > 3:
+        reasons.append("Nested subdomain or excessive domain depth")
 
     is_flagged = len(reasons) > 0
     return is_flagged, "; ".join(reasons)
