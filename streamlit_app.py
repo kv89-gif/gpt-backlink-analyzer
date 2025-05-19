@@ -58,7 +58,7 @@ if uploaded_file and client_url and niche:
             with st.spinner(f"Analyzing {url}..."):
                 try:
                     analysis = analyze_backlink(client_url, niche, url)
-                    parsed = dict(line.split(": ", 1) for line in analysis.strip().split("\n"))
+                    parsed = dict(line.split(": ", 1) for line in analysis.strip().split("\n") if ": " in line)
                     parsed['Competitor URL'] = url
                     results.append(parsed)
                     time.sleep(1.5)  # Delay to avoid rate limit
@@ -66,9 +66,13 @@ if uploaded_file and client_url and niche:
                     st.warning(f"Failed to analyze {url}: {e}")
 
         result_df = pd.DataFrame(results)
-        st.dataframe(result_df[['Competitor URL', 'Relevance', 'Quality', 'Ease', 'Recommendation']])
+        required_cols = ['Competitor URL', 'Relevance', 'Quality', 'Ease', 'Recommendation']
 
-        # Export results
-        st.download_button("Download Results", data=result_df.to_csv(index=False), file_name="analysis_results.csv")
+        if all(col in result_df.columns for col in required_cols):
+            st.dataframe(result_df[required_cols])
+            st.download_button("Download Results", data=result_df.to_csv(index=False), file_name="analysis_results.csv")
+        else:
+            st.warning("The response from GPT did not contain all expected fields. Showing raw results instead.")
+            st.dataframe(result_df)
 else:
     st.info("Please fill all details and upload your competitor backlinks CSV.")
